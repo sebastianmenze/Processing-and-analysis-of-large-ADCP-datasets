@@ -344,7 +344,7 @@ adcp_nc.py adcpdb  contour/os75  siarctic2017 os75
 
 ## L-ADCP
 
-
+The L-ADCP data was processed using the Matlab based library inversion software LDEO (Version 4.2, Visbeck, 2002). In the upper layers, VM-ADCP data was used as a constraint for the inversion whereas bottom echoes were used as a constraint for the lower layers. 
 # Analysis
 
 
