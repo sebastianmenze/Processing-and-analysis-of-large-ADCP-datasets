@@ -344,7 +344,75 @@ adcp_nc.py adcpdb  contour/os75  siarctic2017 os75
 
 ## L-ADCP
 
-The L-ADCP data (files such as `sta0032_MLADC000.000`) was processed using the Matlab based library inversion software LDEO (Version 4.2, Visbeck, 2002). In the upper layers, VM-ADCP data was used as a constraint for the inversion whereas bottom echoes were used as a constraint for the lower layers. 
+The L-ADCP data was processed using the Matlab based library inversion software LDEO (Version 4.2, Visbeck, 2002, http://www.ldeo.columbia.edu/~ant/LADCP). To process L-ADCP data, one needs the processed CTD and VM-ADCP data. The CTD data need to be in the `.cnv` format and contain each measurements latitude, longitude and time in seconds. The CTD cnv files are usually created using the seabird software "SBEDataProcessing" and should look like this:
+
+```
+* Sea-Bird SBE 9 Data File:
+* FileName = C:\Seabird\SeasaveV7\STA0095.hex
+* Software Version Seasave V 7.26.6.26
+* Temperature SN = 4497
+* Conductivity SN = 2666
+* Number of Bytes Per Scan = 34
+* Number of Voltage Words = 5
+* Number of Scans Averaged by the Deck Unit = 1
+* System UpLoad Time = Aug 23 2017 13:53:55
+* NMEA Latitude = 79 39.47 N
+* NMEA Longitude = 006 47.77 E
+* NMEA UTC (Time) = Aug 23 2017  13:53:54
+* Store Lat/Lon Data = Append to Every Scan
+* SBE 11plus V 5.0
+
+# A LOT OF METADATA
+
+** Ship: F/F "Helmer Hanssen"
+** Station: 0095
+** Echodepth: 983
+** Log: 8362.060
+** Wind-Dir/Force: 205 17
+** Air-Temp (dry): 3.5
+** Weather Sky: 8 8
+** Sea Ice: 2 0
+* System UTC = Aug 23 2017 13:53:55
+# nquan = 16
+# nvalues = 56918                                 
+# units = specified
+# name 0 = timeS: Time, Elapsed [seconds]
+# name 1 = latitude: Latitude [deg]
+# name 2 = longitude: Longitude [deg]
+# name 3 = depSM: Depth [salt water, m]
+# name 4 = potemp090C: Potential Temperature [ITS-90, deg C]
+# name 5 = sal00: Salinity, Practical [PSU]
+# name 6 = sigma-é00: Density [sigma-theta, kg/m^3]
+# name 7 = svCM: Sound Velocity [Chen-Millero, m/s]
+# name 8 = prDM: Pressure, Digiquartz [db]
+# name 9 = sbeox0Mg/L: Oxygen, SBE 43 [mg/l]
+# name 10 = flSP: Fluorescence, Seapoint
+# name 11 = seaTurbMtr: Turbidity, Seapoint [FTU]
+# name 12 = n2satMg/L: Nitrogen Saturation [mg/l]
+# name 13 = sbeox0PS: Oxygen, SBE 43 [% saturation]
+# name 14 = sigma-é00: Density [sigma-theta, kg/m^3]
+# name 15 = flag:  0.000e+00
+
+# A LOT OF METADATA
+
+# file_type = ascii
+*END*
+      0.000   79.65782    6.79616      3.527     3.0108    32.7933    26.1229    1459.65      3.565    10.6711 2.1978e-01      0.183   16.80369     99.108    26.1229  0.000e+00
+      0.042   79.65782    6.79616      3.527     3.0109    32.7935    26.1230    1459.65      3.565    10.6710 2.1978e-01      0.183   16.80363     99.108    26.1230  0.000e+00
+      0.083   79.65782    6.79616      3.527     3.0109    32.7933    26.1228    1459.65      3.565    10.6711 1.8315e-01      0.183   16.80365     99.108    26.1228  0.000e+00
+      0.125   79.65782    6.79616      3.515     3.0110    32.7933    26.1228    1459.65      3.552    10.6793 2.1978e-01      0.153   16.80359     99.185    26.1228  0.000e+00
+      0.167   79.65782    6.79616      3.527     3.0110    32.7934    26.1229    1459.65      3.565    10.6721 2.1978e-01      0.153   16.80357     99.119    26.1229  0.000e+00
+      0.208   79.65782    6.79616      3.527     3.0112    32.7937    26.1231    1459.65      3.565    10.6720 2.1978e-01      0.153   16.80347     99.118    26.1231  0.000e+00
+      0.250   79.65782    6.79616      3.579     3.0114    32.7935    26.1229    1459.65      3.617    10.6720 2.1978e-01      0.183   16.80344     99.118    26.1229  0.000e+00
+      0.292   79.65782    6.79616      3.527     3.0114    32.7934    26.1229    1459.65      3.565    10.6802 2.1978e-01      0.244   16.80345     99.195    26.1229  0.000e+00
+
+# A LOT MORE DATA
+
+```
+
+
+(files such as `sta0032_MLADC000.000`) 
+In the upper layers, VM-ADCP data was used as a constraint for the inversion whereas bottom echoes were used as a constraint for the lower layers. 
 
 We need processed VM-ADCP and CTD data to process the L_ADCP data. These files are usually given in the form  
 
