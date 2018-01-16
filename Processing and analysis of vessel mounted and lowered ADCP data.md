@@ -344,7 +344,77 @@ adcp_nc.py adcpdb  contour/os75  siarctic2017 os75
 
 ## L-ADCP
 
-The L-ADCP data was processed using the Matlab based library inversion software LDEO (Version 4.2, Visbeck, 2002). In the upper layers, VM-ADCP data was used as a constraint for the inversion whereas bottom echoes were used as a constraint for the lower layers. 
+The L-ADCP data (files such as `sta0032_MLADC000.000`) was processed using the Matlab based library inversion software LDEO (Version 4.2, Visbeck, 2002). In the upper layers, VM-ADCP data was used as a constraint for the inversion whereas bottom echoes were used as a constraint for the lower layers. 
+
+We need processed VM-ADCP and CTD data to process the L_ADCP data. These files are usually given in the form  
+
+
+Create a folder containing the LDEO matlab functions, for example `addpath(genpath('C:\Users\a5278\Documents\MATLAB\LADCP_lib'))
+` add it to your working directory.
+
+Then load the LADCP data files to 
+
+Load VM-ADCP data netcdf file and save them in a format readable for the  LDEA software 
+
+```
+addpath(genpath('C:\Users\a5278\Documents\MATLAB\matlab_functions'))
+
+filename='C:\Users\a5278\Documents\codas_shared\siarctic2017\enr\os75\contour\os75.nc';
+
+info=ncinfo(filename)
+
+for i=1:size(info.Variables,2)
+   variables_to_load{i}=info.Variables(i).Name;
+end
+clear data_struct
+
+% loop over the variables
+for j=1:numel(variables_to_load)
+    % extract the jth variable (type = string)
+    var = variables_to_load{j};
+
+    % use dynamic field name to add this to the structure
+    data_struct.(var) = ncread(filename,var);
+
+    % convert from single to double, if that matters to you (it does to me)
+    if isa(data_struct.(var),'single')
+        data_struct.(var) = double(data_struct.(var));
+    end
+end
+
+data_struct.u(data_struct.u>10)=NaN;
+data_struct.v(data_struct.v>10)=NaN;
+data_struct.lat(data_struct.lat>100)=NaN;
+data_struct.lon(data_struct.lon>400)=NaN;
+data_struct.depth(data_struct.depth>15000)=NaN;
+
+% correct time offest
+
+data_struct.time=data_struct.time+1;
+
+date=datenum(2017,0,data_struct.time); 
+dv=datevec(date); 
+
+tim_sadcp=julian(dv(:,1),dv(:,2),dv(:,3),dv(:,4)+ dv(:,5)./60 +  1/60*dv(:,6)/60  );
+
+[year,month,day,hour,minu,sec,dayweek,dategreg] = julian2greg(tim_sadcp);
+
+lat_sadcp=data_struct.lat;
+lon_sadcp=data_struct.lon;
+u_sadcp=data_struct.u;
+v_sadcp=data_struct.v;
+z_sadcp=data_struct.depth(:,1);
+
+cd('C:\Users\a5278\Documents\MATLAB\LADCP_data\LADCP_2017\proc')
+
+save('sadcp.mat','lat_sadcp','lon_sadcp','u_sadcp','v_sadcp','z_sadcp','tim_sadcp')
+
+rmpath(genpath('C:\Users\a5278\Documents\MATLAB\matlab_functions'))
+```
+
+
+
+
 # Analysis
 
 
