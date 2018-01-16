@@ -44,7 +44,7 @@ The VM-ADCP is usualy mounted in the ships hull or a retractable keel, and conne
 
 Make sure that the PC is running with the exact UTC time. If you can, synchronize the PC clock with a GPS device, the NMEA navigation data stream or the internet. Having the correct timestamps in the ADCP data is important for the post-processing (combining the L-ADCP, VM-ADCP and CTD data).
 
-<img src="vmdas.png">
+<img src="vmdas.PNG">
 
 Here we used VMDAS to collect VM-ADCP data. After starting up the PC and ensuring the PC is properly connected to the ADCP and the ships navigation channels, one can open the VMDAS and select the button: File--> Collect Data. This will open some empty diagrams. The next step is to edit the data options under: Options --> Edit data options. In the first section "Communications" the ADCP and NMEA (navigation) data channels need to be set to the right ports, but the ships technician likely did this already. In the next section "ADCP setup" you need to select the bin number and size. This depends on the frequency of the ADCP. We used 100 bins with a binsize of 8 m and 8 ms paceing between the bins. The ADCP also requires a specific set up file, which states details of the ADCPs mounting and ping-ing patters. This is usually avialable from the ships technician or stored on the data collection PC. Here is an example from RV Helmer Hanssen:
 
@@ -356,7 +356,7 @@ Then load the LADCP data files to
 
 Load VM-ADCP data netcdf file and save them in a format readable for the  LDEA software 
 
-```
+```Matlab
 addpath(genpath('C:\Users\a5278\Documents\MATLAB\matlab_functions'))
 
 filename='C:\Users\a5278\Documents\codas_shared\siarctic2017\enr\os75\contour\os75.nc';
