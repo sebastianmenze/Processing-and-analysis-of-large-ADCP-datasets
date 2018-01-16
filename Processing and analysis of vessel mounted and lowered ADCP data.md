@@ -411,7 +411,7 @@ The L-ADCP data was processed using the Matlab based library inversion software 
 
 To start the processing, generate a working directory and store the CTD cnv files in and extra folder `workingfolder/CTD`. Now also create the folders `workingfolder/checkpoints`, `workingfolder/proc`, `workingfolder/processed` and `workingfolder/raw`. Store the L-ADCP data (files such as `sta0032_MLADC000.000`) in `workingfolder/raw`. 
 
-To constrain the current profile solution we use the VM-ADCP in the upper layers and bottom echoes for the lower layers. Therefore load the VM-ADCP data netcdf file and save them in a format readable for the  LDEA software:
+To constrain the current profile solution we use the VM-ADCP in the upper layers and bottom echoes for the lower layers. Therefore load the VM-ADCP data netcdf file and save them in a format readable for the  LDEA software, into the "proc" folder:
 
 ```Matlab
 addpath(genpath('C:\Users\a5278\Documents\MATLAB\matlab_functions'))
@@ -469,7 +469,41 @@ save('sadcp.mat','lat_sadcp','lon_sadcp','u_sadcp','v_sadcp','z_sadcp','tim_sadc
 rmpath(genpath('C:\Users\a5278\Documents\MATLAB\matlab_functions'))
 ```
 
+Inside the "proc" folder you now need to creat a `set_cast_params.m` file (following the LDEA documentation). It tells the LDEO software where to find its inputs. Here is an example:
+```Matlab
+f.checkpoints = sprintf('C:/Users/a5278/Documents/MATLAB/LADCP_data/LADCP_2017/checkpoints/%03d',stn);
+f.res = sprintf('C:/Users/a5278/Documents/MATLAB/LADCP_data/LADCP_2017/processed/%03d',stn);
+f.ladcpdo = sprintf('C:/Users/a5278/Documents/MATLAB/LADCP_data/LADCP_2017/raw/sta%03d_MLADC000.000',stn);
+p.drot = magdev(70,5);
 
+p.cruise_id ='SI_ARCTIC_2017'; 
+p.ladcp_station = stn;
+p.whoami = 'S. Menze';
+p.name = sprintf('%s # %d downlooker',p.cruise_id,p.ladcp_station);
+p.saveplot = [1:4 11 13:14];
+
+f.ctd = sprintf('C:/Users/a5278/Documents/MATLAB/LADCP_data/LADCP_2017/CTD/Sta%04d.cnv',stn);
+f.ctd_header_lines = 250;
+f.ctd_fields_per_line = 16;
+f.ctd_pressure_field = 9;
+f.ctd_temperature_field = 5;
+f.ctd_salinity_field = 6;
+f.ctd_time_field = 1;
+f.ctd_time_base = 0;
+
+f.nav = f.ctd;
+f.nav_header_lines = 250;
+f.nav_fields_per_line = 16;
+f.nav_lat_field=2;
+f.nav_lon_field=3;
+f.nav_time_base=0;
+
+f.sadcp = 'sadcp.mat';
+```
+
+Now you are ready to process your L-ADCP files with the command `process_cast( #insert_stationnumber )`. The processed data and figures are stored in the `workingfolder/processed` folder. Here is a screenshot of the process. More detailed information and instructions can be found in the LDEO manual.
+
+![](sta032_ladcp.PNG)
 
 
 # Analysis
