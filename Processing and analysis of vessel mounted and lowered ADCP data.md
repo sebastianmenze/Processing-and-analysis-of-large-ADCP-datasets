@@ -407,22 +407,11 @@ The L-ADCP data was processed using the Matlab based library inversion software 
       0.292   79.65782    6.79616      3.527     3.0114    32.7934    26.1229    1459.65      3.565    10.6802 2.1978e-01      0.244   16.80345     99.195    26.1229  0.000e+00
 
 # A LOT MORE DATA
-
 ```
 
+To start the processing, generate a working directory and store the CTD cnv files in and extra folder `workingfolder/CTD`. Now also create the folders `workingfolder/checkpoints`, `workingfolder/proc`, `workingfolder/processed` and `workingfolder/raw`. Store the L-ADCP data (files such as `sta0032_MLADC000.000`) in `workingfolder/raw`. 
 
-(files such as `sta0032_MLADC000.000`) 
-In the upper layers, VM-ADCP data was used as a constraint for the inversion whereas bottom echoes were used as a constraint for the lower layers. 
-
-We need processed VM-ADCP and CTD data to process the L_ADCP data. These files are usually given in the form  
-
-
-Create a folder containing the LDEO matlab functions, for example `addpath(genpath('C:\Users\a5278\Documents\MATLAB\LADCP_lib'))
-` add it to your working directory.
-
-Then load the LADCP data files to 
-
-Load VM-ADCP data netcdf file and save them in a format readable for the  LDEA software 
+To constrain the current profile solution we use the VM-ADCP in the upper layers and bottom echoes for the lower layers. Therefore load the VM-ADCP data netcdf file and save them in a format readable for the  LDEA software:
 
 ```Matlab
 addpath(genpath('C:\Users\a5278\Documents\MATLAB\matlab_functions'))
