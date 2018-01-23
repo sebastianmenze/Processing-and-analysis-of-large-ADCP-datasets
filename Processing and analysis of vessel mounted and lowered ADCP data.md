@@ -505,6 +505,7 @@ Now you are ready to process your L-ADCP files with the command `process_cast( #
 
 ![](sta032_ladcp.PNG)
 
+
 # Analysis
 
 VM-ADCP data (and often also L_ADCP data) varies with both time and space, making it a challenging data-set to interpret. In this study we used three different approaches to this problem:
@@ -513,9 +514,14 @@ VM-ADCP data (and often also L_ADCP data) varies with both time and space, makin
 - discussion of individual VM- and L-ADCP sections
 
 ## Objective mapping
-In this section I will describe how to use objective mapping to generate an interpolated current map. Objective mapping (Davis 1985) is a interpolation method used to generate a smooth and regular data grid from scattered datapoints, and is similar to other interpolation techniques such as kriging. The methods basically fits a 
+In this section I will describe how to use objective mapping to generate an interpolated current map. Objective mapping (Davis 1985) is a interpolation method used to generate a smooth and regular data grid from scattered datapoints, and is similar to other interpolation techniques such as kriging. The methods assumes that the data fields autocorrelation has a gaussian shape ('C(x,y) = E*D(x,y)+(1-E)*exp(-(x/LX)^2-(y/LY)^2)') and is the same over the entire field. In addition we need to know the noise or error of the datafield, so the fitting does not produce wrong results due to outliers in the data. In Matlab objective mapping was implemented by a team from the Scripps oceanographic institute (http://mooring.ucsd.edu/software/matlab/doc/toolbox/datafun/objmap.html). 
 
-
+To find the radius of self similarity (standard deviation of the Gaussian variance function) and error of the VM-ADCP dataset, we calculated the average cross-semi-variance of the current vectors u and v in the VM-ADCP data set:
+ 'variog(i,k)= 1/(sum(ixd)) * sum( (u(i) - u(ixd)).^2 .* (v(i) - v(ixd)).^2 );'
+ 
+ $$x_{1,2} = {-b\pm\sqrt{b^2 - 4ac} \over 2a}.$$
+ 
+ Where 
 # Visualization
 
 
