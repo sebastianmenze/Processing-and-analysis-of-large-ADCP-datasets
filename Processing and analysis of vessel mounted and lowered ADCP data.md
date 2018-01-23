@@ -505,14 +505,22 @@ Now you are ready to process your L-ADCP files with the command `process_cast( #
 
 ![](sta032_ladcp.PNG)
 
-
 # Analysis
 
+VM-ADCP data (and often also L_ADCP data) varies with both time and space, making it a challenging data-set to interpret. In this study we used three different approaches to this problem:
+- spatial interpolation to map stable circulation patterns (Objective mapping)
+- binning in spatial and temporal boxes to compare spatial and temporal variability
+- discussion of individual VM- and L-ADCP sections
+
+## Objective mapping
+In this section I will describe how to use objective mapping to generate an interpolated current map. Objective mapping (Davis 1985) is a interpolation method used to generate a smooth and regular data grid from scattered datapoints, and is similar to other interpolation techniques such as kriging. The methods basically fits a 
 
 
-
-After each cruise, the VM-ADCP data was post-processed using the
-
+# Visualization
 
 
 ![](output_n6xlp9.gif)
+
+# References
+
+Davis, R. E. (1985). Objective mapping by least squares fitting. Journal of Geophysical Research, 90(C3), 4773. http://doi.org/10.1029/JC090iC03p04773
