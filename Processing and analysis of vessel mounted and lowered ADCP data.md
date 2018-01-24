@@ -505,8 +505,6 @@ Now you are ready to process your L-ADCP files with the command `process_cast( #
 
 ![](sta032_ladcp.PNG)
 
-
-
 # Analysis
 
 VM-ADCP data (and often also L_ADCP data) varies with both time and space, making it a challenging data-set to interpret. In this study we used three different approaches to this problem:
@@ -516,7 +514,8 @@ VM-ADCP data (and often also L_ADCP data) varies with both time and space, makin
 
 All analysis described here was done in Matlab 2016a.
 
-*How to read in VM-ADCP netCDF files:*
+**How to read in VM-ADCP netCDF files:**
+
 I loaded all VM-ADCP into a Matlab structure array using the following code:
 ```Matlab
 % load additinal function such as "julian" to convert dates
@@ -550,7 +549,7 @@ data_struct.lat(data_struct.lat>100)=NaN;
 data_struct.lon(data_struct.lon>400)=NaN;
 data_struct.depth(data_struct.depth>15000)=NaN;
 
-% correct time offest
+% correct time offset
 data_struct.time=data_struct.time+1;
 
 date=datenum(2014,0,data_struct.time); 
@@ -826,9 +825,74 @@ ix_adcp=adcp.dist>0.5 & ~isnan(u)' &  ~isnan(v)' & dv(:,2)>6 &  dv(:,2)<10;
 [xi,yi,vi,emv] = objmap(adcp.lat(ix_adcp),adcp.lon(ix_adcp),v(ix_adcp),g_lat,g_lon,[corr_length,corr_length],errorthreshold);
 ```
 
-To plot the data
+## Creating current maps
+To show the current field, it us very useful to map a matrix of current vectors onto bathymetry. For this purpose we use the IBCAO bathymetry database (https://www.ngdc.noaa.gov/mgg/bathymetry/arctic/arctic.html) and NOAA Global coastline dataset: https://www.ngdc.noaa.gov/mgg/shorelines/data/gshhs/  .
 
-# Visualization
+In Matlab the bathymetry data can be loaded into a strcture array:
+```Matlab
+latlim = [77.9 82.3];
+lonlim = [2 25];
+ibcaofile='C:\Users\a5278\Documents\MATLAB\matlab_functions\ibcao\IBCAO_V3_30arcsec_SM.grd';
+
+in=ncinfo(ibcaofile);
+
+x=ncread(ibcaofile,'x');
+y=ncread(ibcaofile,'y');
+[ibcao.lon,ibcao.lat]=meshgrid(x,y);
+ilat=ibcao.lat';
+ilon=ibcao.lon';
+idepth=ncread(ibcaofile,'z');
+
+[ibcao.lon,ibcao.lat]=meshgrid(x(x>lonlim(1)&x<lonlim(2)),y(y>latlim(1)&y<latlim(2)));
+
+ibcao.depth=idepth( ilon>lonlim(1)&ilon<lonlim(2) & ilat>latlim(1)&ilat<latlim(2) );
+ibcao.depth=reshape(ibcao.depth,size(ibcao.lon,2),size(ibcao.lon,1));
+ibcao.lat=ibcao.lat';
+ibcao.lon=ibcao.lon';
+
+ [Z, refvec] = geoloc2grid( ibcao.lat,  ibcao.lon, ibcao.depth, mean(diff(x)));
+
+clear x y ilat ilon idepth
+```
+Then the map can be created using the `m_map` Matlab package:
+```Matlab
+figure(2)
+clf
+hold on
+set(gcf,'color',[1 1 1])
+
+m_proj('lambert','long',lonlim,'lat',latlim);
+m_contour(ibcao.lon,ibcao.lat,ibcao.depth,[-6000:400:0],'color',[.5 .5 .5]);
+m_gshhs_h('patch',[.9 .9 .9]);
+m_grid('xlabeldir','end','fontsize',10);
+bottomdepth = ltln2val(Z, refvec, xi, yi);
+
+m_plot(adcp.lon(ix_adcp),adcp.lat(ix_adcp),'.','color','k','markersize',3)
+
+ix=emu<errorthreshold & emv<errorthreshold & bottomdepth<0;
+C=sqrt( ui.^2 + vi.^2 );
+vecs = m_vec(1, yi(ix),xi(ix),ui(ix),vi(ix),C(ix), 'shaftwidth', 2, 'headlength', 4);
+uistack(vecs);
+colormap(gca,cmocean('matter'))
+set(gca,'clim',[ 0 0.4])
+
+
+cb=colorbar('north');
+ylabel(cb,'m s^{-1}')
+
+%  UNCOMMENT THIS FOR EXPORTING FIGURE
+%   mkdir('imagefolder')
+%   set(gcf,'PaperPositionMode','auto')
+%   print(gcf,'-dpng',['imagefolder/objective_mapping_all_adcp_data_julaugsep_detided'],'-r300') 
+%   savefig(gcf,'imagefolder/objective_mapping_all_adcp_data_julaugsep_detided')
+```
+
+Which results in a map like this:
+
+![](objective_mapping_all_adcp_data_julaugsep.png)
+
+
+# Visualization and animation of current data
 
 
 ![](output_n6xlp9.gif)
