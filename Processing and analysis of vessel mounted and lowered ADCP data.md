@@ -506,6 +506,7 @@ Now you are ready to process your L-ADCP files with the command `process_cast( #
 ![](sta032_ladcp.PNG)
 
 
+
 # Analysis
 
 VM-ADCP data (and often also L_ADCP data) varies with both time and space, making it a challenging data-set to interpret. In this study we used three different approaches to this problem:
@@ -514,14 +515,22 @@ VM-ADCP data (and often also L_ADCP data) varies with both time and space, makin
 - discussion of individual VM- and L-ADCP sections
 
 ## Objective mapping
-In this section I will describe how to use objective mapping to generate an interpolated current map. Objective mapping (Davis 1985) is a interpolation method used to generate a smooth and regular data grid from scattered datapoints, and is similar to other interpolation techniques such as kriging. The methods assumes that the data fields autocorrelation has a gaussian shape ('C(x,y) = E*D(x,y)+(1-E)*exp(-(x/LX)^2-(y/LY)^2)') and is the same over the entire field. In addition we need to know the noise or error of the datafield, so the fitting does not produce wrong results due to outliers in the data. In Matlab objective mapping was implemented by a team from the Scripps oceanographic institute (http://mooring.ucsd.edu/software/matlab/doc/toolbox/datafun/objmap.html). 
 
-To find the radius of self similarity (standard deviation of the Gaussian variance function) and error of the VM-ADCP dataset, we calculated the average cross-semi-variance of the current vectors u and v in the VM-ADCP data set:
- 'variog(i,k)= 1/(sum(ixd)) * sum( (u(i) - u(ixd)).^2 .* (v(i) - v(ixd)).^2 );'
+In this section I will describe how to use objective mapping to generate an interpolated current map. Objective mapping (Davis 1985) is a interpolation method used to generate a smooth and regular data grid from scattered datapoints, and is similar to other interpolation techniques such as kriging. The methods assumes that the data fields autocorrelation/semi-variance has a Gaussian shape (`C(x,y) = E*D(x,y)+(1-E)*exp(-(x/LX)^2-(y/LY)^2)`) and is the same over the entire field. In addition we need to know the noise or error of the data field, so the fitting does not produce wrong results due to outliers in the data. In Matlab objective mapping was implemented by a team from the Scripps oceanographic institute ( http://mooring.ucsd.edu/ ). We based this interpolation on all available VM-ADCP observation, consisting of 11 surveys in August-September 2014-2017. We assume that the temporal variation introduced by combing different surveys together is smoothed out by the interpolation method. Combing the VM-ADCP data of multiple surveys greatly improves the spatial coverage and resolution of the dataset. 
+
+To find the radius of self similarity (standard deviation of the Gaussian variance function (LX and LY)) and relative error (E) of the VM-ADCP dataset, we calculated the average cross-semi-variance of the depth averaged current vectors u and v in the VM-ADCP data set:
  
- $$x_{1,2} = {-b\pm\sqrt{b^2 - 4ac} \over 2a}.$$
+ `variogram(datapoint,distance_from_datapoint)= 1/(number_of_datapoints_in_distance_from_datapoint) * sum( (u(datapoint) - u(datapoints_in_distance_from_datapoint)).^2 .* (v(datapoint) - v(datapoints_in_distance_from_datapoint)).^2 );`
  
- Where 
+We then averaged over all data points to estimate the median and mean variogram, that depicts the semi-variance of the u and v current vectors as a function of distance (Figure below, left panel). In addition we fitted the Gaussian function `range_of_variance*(1-exp(-distance^2/standard_deviation^2))` to each data points variogram. The resulting distribution of standard deviations (the radius of self similarity) is displayed in the right panel of the figure below. The median radius of self similarity is estimated to be 30 km, and also displayed as dashed line in the left panel. We used this as standard deviation for the objective mapping algorithm and allowed the interpolation a relative error of 0.4. 
+
+![](variogram_results.png)
+
+
+
+
+
+
 # Visualization
 
 
