@@ -514,9 +514,286 @@ VM-ADCP data (and often also L_ADCP data) varies with both time and space, makin
 - binning in spatial and temporal boxes to compare spatial and temporal variability
 - discussion of individual VM- and L-ADCP sections
 
+All analysis described here was done in Matlab 2016a.
+
+*How to read in VM-ADCP netCDF files:*
+I loaded all VM-ADCP into a Matlab structure array using the following code:
+```Matlab
+% load additinal function such as "julian" to convert dates
+addpath(genpath('C:\Users\a5278\Documents\MATLAB\matlab_functions')) 
+
+adcp.depth=10:10:1000;
+
+%% first cruise 
+filename='C:\Users\a5278\Documents\MATLAB\carbon_bridge_data\adcp_aug_2014\os75bb.nc';
+info=ncinfo(filename)
+
+for i=1:size(info.Variables,2)
+   variables_to_load{i}=info.Variables(i).Name;
+end
+
+% loop over the variables
+for j=1:numel(variables_to_load)
+    % extract the jth variable (type = string)
+    var = variables_to_load{j};
+    % use dynamic field name to add this to the structure
+    data_struct.(var) = ncread(filename,var);
+    % convert from single to double, if that matters to you (it does to me)
+    if isa(data_struct.(var),'single')
+        data_struct.(var) = double(data_struct.(var));
+    end
+end
+
+data_struct.u(data_struct.u>10)=NaN;
+data_struct.v(data_struct.v>10)=NaN;
+data_struct.lat(data_struct.lat>100)=NaN;
+data_struct.lon(data_struct.lon>400)=NaN;
+data_struct.depth(data_struct.depth>15000)=NaN;
+
+% correct time offest
+data_struct.time=data_struct.time+1;
+
+date=datenum(2014,0,data_struct.time); 
+dv=datevec(date); 
+tim_sadcp=julian(dv);
+[year,month,day,hour,minu,sec,dayweek,dategreg] = julian2greg(tim_sadcp);
+
+% generate structure array
+adcp.lat=[];
+adcp.lon=[];
+adcp.u_mean=[];
+adcp.v_mean=[];
+adcp.v=[];
+adcp.u=[];
+adcp.time=[];
+% adcp.depth=[];
+adcp.dist=[];
+adcp.course=[];
+
+adcp.lat=[adcp.lat;data_struct.lat];
+adcp.lon=[adcp.lon;data_struct.lon];
+
+ix_val=~isnan(data_struct.u(1:50,:));
+ix=sum(ix_val,1)<10;
+a=nanmean(data_struct.u);
+a(ix)=NaN;
+adcp.u_mean=[adcp.u_mean,a];
+
+ix_val=~isnan(data_struct.v(1:50,:));
+ix=sum(ix_val,1)<10;
+a=nanmean(data_struct.v);
+a(ix)=NaN;
+adcp.v_mean=[adcp.v_mean,a];
+
+for i=1:size(data_struct.u,2)
+u(:,i)=interp1(data_struct.depth(:,i),data_struct.u(:,i),adcp.depth);    
+v(:,i)=interp1(data_struct.depth(:,i),data_struct.v(:,i),adcp.depth);    
+end
+adcp.u=[adcp.u,u];
+adcp.v=[adcp.v,v];
+
+adcp.time=[adcp.time;date];
+% adcp.depth=data_struct.depth(:,10);
+
+[course,dist]=legs(data_struct.lat',data_struct.lon');
+adcp.dist=[adcp.dist;[0;dist]]; adcp.course=[adcp.course;[0;course]]; 
+
+clearvars -except adcp
+
+%% additional cruises
+
+filename='C:\Users\a5278\Documents\MATLAB\SADCP_nc_files\SI_ARCTIC_VMADCP_os75_2014.nc';
+
+info=ncinfo(filename)
+
+for i=1:size(info.Variables,2)
+   variables_to_load{i}=info.Variables(i).Name;
+end
+
+% loop over the variables
+for j=1:numel(variables_to_load)
+    % extract the jth variable (type = string)
+    var = variables_to_load{j};
+    % use dynamic field name to add this to the structure
+    data_struct.(var) = ncread(filename,var);
+    % convert from single to double, if that matters to you (it does to me)
+    if isa(data_struct.(var),'single')
+        data_struct.(var) = double(data_struct.(var));
+    end
+end
+
+data_struct.u(data_struct.u>10)=NaN;
+data_struct.v(data_struct.v>10)=NaN;
+data_struct.lat(data_struct.lat>100)=NaN;
+data_struct.lon(data_struct.lon>400)=NaN;
+data_struct.depth(data_struct.depth>15000)=NaN;
+
+% correct time offset
+data_struct.time=data_struct.time+1;
+
+date=datenum(2014,0,data_struct.time); 
+dv=datevec(date); 
+tim_sadcp=julian(dv);
+[year,month,day,hour,minu,sec,dayweek,dategreg] = julian2greg(tim_sadcp);
+
+adcp.lat=[adcp.lat;data_struct.lat];
+adcp.lon=[adcp.lon;data_struct.lon];
+
+ix_val=~isnan(data_struct.u(1:50,:));
+ix=sum(ix_val,1)<10;
+a=nanmean(data_struct.u);
+a(ix)=NaN;
+adcp.u_mean=[adcp.u_mean,a];
+
+ix_val=~isnan(data_struct.v(1:50,:));
+ix=sum(ix_val,1)<10;
+a=nanmean(data_struct.v);
+a(ix)=NaN;
+adcp.v_mean=[adcp.v_mean,a];
+
+for i=1:size(data_struct.u,2)
+u(:,i)=interp1(data_struct.depth(:,i),data_struct.u(:,i),adcp.depth);    
+v(:,i)=interp1(data_struct.depth(:,i),data_struct.v(:,i),adcp.depth);    
+end
+adcp.u=[adcp.u,u];
+adcp.v=[adcp.v,v];
+
+adcp.time=[adcp.time;date];
+
+[course,dist]=legs(data_struct.lat',data_struct.lon');
+adcp.dist=[adcp.dist;[0;dist]]; adcp.course=[adcp.course;[0;course]]; 
+
+clearvars -except adcp
+
+%% delete empty entries 
+
+for i=1:size(adcp.u,2)
+    
+  if  sum(isnan(adcp.u(:,i)))==numel(adcp.u(:,i))
+      
+ix_delete(i)=true;
+  else
+ix_delete(i)=false;
+      
+  end
+ end
+    
+adcp.u(:,ix_delete)=[];
+adcp.v(:,ix_delete)=[];
+adcp.lat(ix_delete)=[];
+adcp.lon(ix_delete)=[];
+adcp.u_mean(ix_delete)=[];
+adcp.v_mean(ix_delete)=[];
+adcp.time(ix_delete)=[];
+adcp.dist(ix_delete)=[];
+adcp.course(ix_delete)=[];
+```
+
+## De-tiding using the AOTIM tidal model
+Tidal currents were subtracted from the VM-ADCP and L-ADCP data set with the AOTIM-5 tidal model (Padman & Erofeeva, 2004). Tides on the shelf surrounding Svalbard can be as strong as 30 m s^-1. Although the tidal model produces reliable tidal estimates, the effect of shelf waves cannot be removed from the ADCP dataset by using the tidal model (Skarðhamar, Skagseth, & Albretsen, 2015). 
+
+The AOTIM model can called directly from Matlab once added to the path:
+```Matlab
+%% De-tidng the data
+
+addpath(genpath('C:\Users\a5278\Documents\MATLAB\tidal_model\tmd_toolbox'))
+Model='C:\Users\a5278\Documents\MATLAB\tidal_model\aotim5_tmd\Model_AOTIM5';
+
+[tide.u,a]=tmd_tide_pred(Model,adcp.time,adcp.lat,adcp.lon,'u',[]);
+[tide.v,a]=tmd_tide_pred(Model,adcp.time,adcp.lat,adcp.lon,'v',[]);
+
+% subtract tides from current data
+for i=1:numel(adcp.depth)
+adcp.u_detide(i,:)=adcp.u(i,:)-tide.u./100;
+adcp.v_detide(i,:)=adcp.v(i,:)-tide.v./100;
+end
+```
+## Calculating the along and off slope current components (Rotation of the ADCP data)
+
+For both the VM-ADCP and L-ADCP current profiles, the along and across slope current component was calculated by rotating the current vectors with slope aspect on their respective location. Slope aspect was calculated from the IBCAO bathymetry (Jakobsson et al., 2012), which was smoothed beforehand with a 2-D lowpass filter set to 18 km length. Here is the code to rotated the VM-ADCP data:
+
+```Matlab
+%% rotate vm adcp
+
+latlim = [77 85];
+lonlim = [0 50];
+ibcaofile='C:\Users\a5278\Documents\MATLAB\matlab_functions\ibcao\IBCAO_V3_30arcsec_SM.grd';
+
+in=ncinfo(ibcaofile);
+
+x=ncread(ibcaofile,'x');
+y=ncread(ibcaofile,'y');
+[ibcao.lon,ibcao.lat]=meshgrid(x,y);
+ilat=ibcao.lat';
+ilon=ibcao.lon';
+idepth=ncread(ibcaofile,'z');
+
+[ibcao.lon,ibcao.lat]=meshgrid(x(x>lonlim(1)&x<lonlim(2)),y(y>latlim(1)&y<latlim(2)));
+
+ibcao.depth=idepth( ilon>lonlim(1)&ilon<lonlim(2) & ilat>latlim(1)&ilat<latlim(2) );
+ibcao.depth=reshape(ibcao.depth,size(ibcao.lon,2),size(ibcao.lon,1));
+ibcao.lat=ibcao.lat';
+ibcao.lon=ibcao.lon';
+
+[Z, refvec] = geoloc2grid( ibcao.lat,  ibcao.lon, ibcao.depth, mean(diff(x)));
+clear x y ilat ilon idepth
+
+adcp.bottomdepth = ltln2val(Z, refvec, adcp.lat, adcp.lon);
+
+% smooth out variation smaller then 18.46 km!
+ma=ones(20); h = 1/numel(ma)*ma;
+z_smooth = filter2(h,Z);
+[aspect, slope, gradN, gradE] = gradientm(z_smooth, refvec);
+asp = ltln2val(aspect, refvec,adcp.lat,adcp.lon);
+
+for i=1:numel(adcp.lat)
+    
+for k=1:numel(adcp.depth)
+    theta=asp(i);
+R = [cosd(theta) -sind(theta); sind(theta) cosd(theta)];
+clear rotated_current 
+rotated_current=[adcp.v(k,i),adcp.u(k,i)]*R;
+adcp.across(k,i)=(rotated_current(1));
+adcp.along(k,i)=(rotated_current(2));
+
+rotated_current=[adcp.v(k,i)-tide.v(i)./100,adcp.u(k,i)-tide.u(i)./100]*R;
+adcp.across_detide(k,i)=(rotated_current(1));
+adcp.along_detide(k,i)=(rotated_current(2));
+end
+end
+```
+
+Now we have sorted our VM-ADCP data into this structure array
+```
+>> adcp
+
+adcp = 
+
+            depth: [1x100 double]
+              lat: [31480x1 double]
+              lon: [31480x1 double]
+           u_mean: [1x31480 double]
+           v_mean: [1x31480 double]
+                v: [100x31480 double]
+                u: [100x31480 double]
+             time: [31480x1 double]
+             dist: [31480x1 double]
+           course: [31480x1 double]
+         u_detide: [100x31480 double]
+         v_detide: [100x31480 double]
+      bottomdepth: [31480x1 double]
+           across: [100x31480 double]
+            along: [100x31480 double]
+    across_detide: [100x31480 double]
+     along_detide: [100x31480 double]
+    u_mean_detide: [1x31480 double]
+    v_mean_detide: [1x31480 double]
+
+```
+
 ## Objective mapping
 
-In this section I will describe how to use objective mapping to generate an interpolated current map. Objective mapping (Davis 1985) is a interpolation method used to generate a smooth and regular data grid from scattered datapoints, and is similar to other interpolation techniques such as kriging. The methods assumes that the data fields autocorrelation/semi-variance has a Gaussian shape (`C(x,y) = E*D(x,y)+(1-E)*exp(-(x/LX)^2-(y/LY)^2)`) and is the same over the entire field. In addition we need to know the noise or error of the data field, so the fitting does not produce wrong results due to outliers in the data. In Matlab objective mapping was implemented by a team from the Scripps oceanographic institute ( http://mooring.ucsd.edu/ ). We based this interpolation on all available VM-ADCP observation, consisting of 11 surveys in August-September 2014-2017. We assume that the temporal variation introduced by combing different surveys together is smoothed out by the interpolation method. Combing the VM-ADCP data of multiple surveys greatly improves the spatial coverage and resolution of the dataset. 
+In this section I will describe how to use objective mapping to generate an interpolated current map in Matlab. Objective mapping (Davis 1985) is a interpolation method used to generate a smooth and regular data grid from scattered datapoints, and is similar to other interpolation techniques such as kriging. The methods assumes that the data fields autocorrelation/semi-variance has a Gaussian shape `C(x,y) = E*D(x,y)+(1-E)*exp(-(x/LX)^2-(y/LY)^2)` and is the same over the entire field. In addition we need to know the noise or error of the data field, so the fitting does not produce wrong results due to outliers in the data. In Matlab objective mapping was implemented by a team from the Scripps oceanographic institute ( http://mooring.ucsd.edu/ ). We based this interpolation on all available VM-ADCP observation, consisting of 11 surveys in August-September 2014-2017. We assume that the temporal variation introduced by combing different surveys together is smoothed out by the interpolation method. Combing the VM-ADCP data of multiple surveys greatly improves the spatial coverage and resolution of the dataset. 
 
 To find the radius of self similarity (standard deviation of the Gaussian variance function (LX and LY)) and relative error (E) of the VM-ADCP dataset, we calculated the average cross-semi-variance of the depth averaged current vectors u and v in the VM-ADCP data set:
  
@@ -526,10 +803,30 @@ We then averaged over all data points to estimate the median and mean variogram,
 
 ![](variogram_results.png)
 
+Using these results we can feed our scattered VM-ADCP data to the objective mapping algorithm:
+```Matlab
+% create target grid you wish to interpolated on
+latlim = [77.9 82.3];
+lonlim = [2 25];
+[g_lat,g_lon]=meshgrid(latlim(1):.1:latlim(2),lonlim(1):.3:lonlim(2));
 
+% depth average VM-ADCP data
+ix_d=adcp.depth>0 & adcp.depth<500;
+u=nanmean(adcp.u_detide(ix_d,:));
+v=nanmean(adcp.v_detide(ix_d,:));
 
+% set interpolation parameters and choose VM-ADCP data that in a selected time range
+errorthreshold=.4;
+corr_length=km2deg(30);
+dv=datevec(adcp.time);
+ix_adcp=adcp.dist>0.5 & ~isnan(u)' &  ~isnan(v)' & dv(:,2)>6 &  dv(:,2)<10;
 
+% run the objective mapping algorithm
+[xi,yi,ui,emu] = objmap(adcp.lat(ix_adcp),adcp.lon(ix_adcp),u(ix_adcp),g_lat,g_lon,[corr_length,corr_length],errorthreshold);
+[xi,yi,vi,emv] = objmap(adcp.lat(ix_adcp),adcp.lon(ix_adcp),v(ix_adcp),g_lat,g_lon,[corr_length,corr_length],errorthreshold);
+```
 
+To plot the data
 
 # Visualization
 
