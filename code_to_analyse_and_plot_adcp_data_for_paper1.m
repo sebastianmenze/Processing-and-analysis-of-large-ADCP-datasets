@@ -1101,7 +1101,7 @@ m_text(23,79.6,'0.4 m s^{-1}')
 % 
 % mkdir('imagefolder')
 %   set(gcf,'PaperPositionMode','auto')
-%   print(gcf,'-dpng',['imagefolder/objective_mapping_current_speed'],'-r500') 
+%   print(gcf,'-dpng',['objective_mapping_current_speed2'],'-r500') 
 
 %%
 
