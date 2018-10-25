@@ -5,4 +5,4 @@ This tutorial will teach you how to make beautiful visualizations of ADCP data s
 
 ![Here is a visualization of VM-ADCP and L-ADCP durrent profiles](ladcp_map_sections_3d_2014_with_vmadcp.png)
 
-![Worms flowing through the average flow field](output_n6xlp9.gif)
+![](animation_small.gif)
