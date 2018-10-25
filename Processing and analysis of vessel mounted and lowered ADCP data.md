@@ -830,70 +830,75 @@ To show the current field, it us very useful to map a matrix of current vectors 
 
 In Matlab the bathymetry data can be loaded into a strcture array:
 ```Matlab
-latlim = [77.9 82.3];
-lonlim = [2 25];
-ibcaofile='C:\Users\a5278\Documents\MATLAB\matlab_functions\ibcao\IBCAO_V3_30arcsec_SM.grd';
-
-in=ncinfo(ibcaofile);
-
-x=ncread(ibcaofile,'x');
-y=ncread(ibcaofile,'y');
-[ibcao.lon,ibcao.lat]=meshgrid(x,y);
-ilat=ibcao.lat';
-ilon=ibcao.lon';
-idepth=ncread(ibcaofile,'z');
-
-[ibcao.lon,ibcao.lat]=meshgrid(x(x>lonlim(1)&x<lonlim(2)),y(y>latlim(1)&y<latlim(2)));
-
-ibcao.depth=idepth( ilon>lonlim(1)&ilon<lonlim(2) & ilat>latlim(1)&ilat<latlim(2) );
-ibcao.depth=reshape(ibcao.depth,size(ibcao.lon,2),size(ibcao.lon,1));
-ibcao.lat=ibcao.lat';
-ibcao.lon=ibcao.lon';
-
- [Z, refvec] = geoloc2grid( ibcao.lat,  ibcao.lon, ibcao.depth, mean(diff(x)));
-
-clear x y ilat ilon idepth
-```
-Then the map can be created using the `m_map` Matlab package:
-```Matlab
 figure(2)
 clf
 hold on
 set(gcf,'color',[1 1 1])
 
+
 m_proj('lambert','long',lonlim,'lat',latlim);
-m_contour(ibcao.lon,ibcao.lat,ibcao.depth,[-6000:400:0],'color',[.5 .5 .5]);
-m_gshhs_h('patch',[.9 .9 .9]);
+m_gshhs_h('patch',[.8 .8 .8]);
 m_grid('xlabeldir','end','fontsize',10);
+
+
+% orig1=[80]
+% orig2=[5]
+% [latout,lonout] = reckon(orig1,orig2,km2deg(30),90);
+
+
+ [C,h]=m_contour(ibcao.lon,ibcao.lat,ibcao.depth,[-4000,-3000,-2000,-1000,-800,-600,-400,-200],'color',[.5 .5 .5]);
+ clabel(C,h,'color',[.5 .5 .5]);
+
+ 
+ factor= deg2km(distance(80,10,81,10))/deg2km(distance(80,10,80,11)) 
+
+latlim = [77.9 82.3];
+lonlim = [2 25];
+[g_lat,g_lon]=meshgrid(latlim(1):.08:latlim(2),lonlim(1):.2:lonlim(2));
+errorthreshold=.4;
+corr_length=km2deg(25);
+dv=datevec(adcp.time);
+ix_adcp=adcp.dist>0.5 & ~isnan(adcp.u_mean_detide)' &  ~isnan(adcp.v_mean_detide)' & dv(:,2)>6 &  dv(:,2)<10;
+[xi,yi,ui,emu] = objmap(adcp.lat(ix_adcp),adcp.lon(ix_adcp),adcp.u_mean_detide(ix_adcp),g_lat,g_lon,[corr_length,corr_length*factor],errorthreshold);
+[xi,yi,vi,emv] = objmap(adcp.lat(ix_adcp),adcp.lon(ix_adcp),adcp.v_mean_detide(ix_adcp),g_lat,g_lon,[corr_length,corr_length*factor],errorthreshold);
+
+% ui=ui-gu;
+% vi=vi-gv;
+
 bottomdepth = ltln2val(Z, refvec, xi, yi);
-
-m_plot(adcp.lon(ix_adcp),adcp.lat(ix_adcp),'.','color','k','markersize',3)
-
 ix=emu<errorthreshold & emv<errorthreshold & bottomdepth<0;
-C=sqrt( ui.^2 + vi.^2 );
-vecs = m_vec(1, yi(ix),xi(ix),ui(ix),vi(ix),C(ix), 'shaftwidth', 2, 'headlength', 4);
+
+c=sqrt(ui(ix).^2+vi(ix).^2);
+ vecs = m_vec(1, yi(ix),xi(ix),ui(ix),vi(ix),c, 'shaftwidth', .7, 'headangle', 30, 'edgeclip', 'on');
+% vecs = m_vec(1, yi(ix),xi(ix),gu(ix),gv(ix),'k', 'shaftwidth', .1, 'headangle', 10);
+
 uistack(vecs);
-colormap(gca,cmocean('matter'))
-set(gca,'clim',[ 0 0.4])
+cb=colorbar('north')
+xlabel(cb,'Interpolated current speed in m s^{-1}')
 
+set(gca,'clim',[0.1 .4])
+  colormap(gca,cmocean('thermal'))
 
-cb=colorbar('north');
-ylabel(cb,'m s^{-1}')
+            m_text(22,79.92,'0.1 m s^{-1}')
+ vecs = m_vec(1, 22,79.8,.1,0,'shaftwidth', 0.7,  'headangle', 30, 'edgeclip', 'on');
+uistack(vecs);
+ vecs = m_vec(1, 22,79.7,.4,0,'shaftwidth', 0.7,  'headangle', 30, 'edgeclip', 'on');
+uistack(vecs);
+m_text(23,79.6,'0.4 m s^{-1}')
 
-%  UNCOMMENT THIS FOR EXPORTING FIGURE
-%   mkdir('imagefolder')
+% 
+% mkdir('imagefolder')
 %   set(gcf,'PaperPositionMode','auto')
-%   print(gcf,'-dpng',['imagefolder/objective_mapping_all_adcp_data_julaugsep_detided'],'-r300') 
-%   savefig(gcf,'imagefolder/objective_mapping_all_adcp_data_julaugsep_detided')
+%   print(gcf,'-dpng',['objective_mapping_current_speed2'],'-r500') 
 ```
 
 Which results in a map like this:
 
-![](objective_mapping_all_adcp_data_julaugsep.png)
+![](f6.png)
 
 
 # Visualization and animation of current data
-![](output_n6xlp9.gif)
+![](animation_small.gif)
 
 ```Matlab
 
