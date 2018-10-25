@@ -893,9 +893,377 @@ Which results in a map like this:
 
 
 # Visualization and animation of current data
-
-
 ![](output_n6xlp9.gif)
+
+```Matlab
+
+%% two worm classes 0-100 and 300-400m layer
+
+
+latlim = [77.9 82.3];
+lonlim = [2 25];
+[g_lat,g_lon]=meshgrid(latlim(1):.1:latlim(2),lonlim(1):.3:lonlim(2));
+
+errorthreshold=.4;
+corr_length=km2deg(30);
+
+dv=datevec(adcp.time);
+
+
+
+ix_d=adcp.depth>20 & adcp.depth<100;
+u=nanmean(adcp.u_detide(ix_d,:));
+v=nanmean(adcp.v_detide(ix_d,:));
+
+ix_adcp=adcp.dist>0.5 & ~isnan(u)' &  ~isnan(v)' & dv(:,2)>6 &  dv(:,2)<10;
+[xi,yi,ui,emu] = objmap(adcp.lat(ix_adcp),adcp.lon(ix_adcp),u(ix_adcp),g_lat,g_lon,[corr_length,corr_length],errorthreshold);
+[xi,yi,vi,emv] = objmap(adcp.lat(ix_adcp),adcp.lon(ix_adcp),v(ix_adcp),g_lat,g_lon,[corr_length,corr_length],errorthreshold);
+
+ [Z_u_100, refvec_u] = geoloc2grid( xi,  yi, ui,.1);
+ [Z_v_100, refvec_v] = geoloc2grid( xi,  yi, vi,.1);
+ [Z_eu_100, refvec_u] = geoloc2grid( xi,  yi, emu,.1);
+ [Z_ev_100, refvec_v] = geoloc2grid( xi,  yi, emv,.1);
+ 
+ ix_d=adcp.depth>300 & adcp.depth<400;
+u=nanmean(adcp.u_detide(ix_d,:));
+v=nanmean(adcp.v_detide(ix_d,:));
+
+ix_adcp=adcp.dist>0.5 & ~isnan(u)' &  ~isnan(v)' & dv(:,2)>6 &  dv(:,2)<10;
+[xi,yi,ui,emu] = objmap(adcp.lat(ix_adcp),adcp.lon(ix_adcp),u(ix_adcp),g_lat,g_lon,[corr_length,corr_length],errorthreshold);
+[xi,yi,vi,emv] = objmap(adcp.lat(ix_adcp),adcp.lon(ix_adcp),v(ix_adcp),g_lat,g_lon,[corr_length,corr_length],errorthreshold);
+
+ [Z_u_300, refvec_u] = geoloc2grid( xi,  yi, ui,.1);
+ [Z_v_300, refvec_v] = geoloc2grid( xi,  yi, vi,.1);
+ [Z_eu_300, refvec_u] = geoloc2grid( xi,  yi, emu,.1);
+ [Z_ev_300, refvec_v] = geoloc2grid( xi,  yi, emv,.1);
+ 
+ 
+% filename='wormflow1.gif';
+
+animationdir='imagefolder/wormflow5'
+mkdir(animationdir)
+
+latlim = [77.9 82.3];
+lonlim = [2 25];
+
+
+n_iterations=100;
+lifetime=15;
+wormlength=10;
+coe=0.1;
+
+worm_age=1;
+
+n_create=600;
+
+clear worm100_lat worm100_lon worm300_lat worm300_lon
+for i_iteration=1:n_iterations
+
+    %%% new worms   
+    if i_iteration==1
+n=n_create;
+t_lat=rand([1,n])*(latlim(2)-latlim(1)) + latlim(1);
+t_lon=rand([1,n])*(lonlim(2)-lonlim(1)) + lonlim(1);
+
+bottomdepth = ltln2val(Z, refvec, t_lat,t_lon);
+emu_t = ltln2val(Z_eu_100, refvec_u, t_lat,t_lon);
+emv_t = ltln2val(Z_ev_100, refvec_u, t_lat,t_lon);
+
+ix=bottomdepth<0 & emu_t<errorthreshold & emv_t<errorthreshold;
+t_lat( ~ix)=[];
+t_lon(~ix)=[];
+
+t_u=ltln2val(Z_u_100, refvec_u, t_lat,t_lon);
+t_v=ltln2val(Z_v_100, refvec_v, t_lat,t_lon);
+
+a=atan2(t_u,t_v);
+t_angle=real(asin(t_u.*sin(a)./t_v))
+t_arclen=sqrt(t_u.^2 + t_v.^2);
+
+coe=0.1;
+
+k=wormlength;
+worm100_lat(1,:)=t_lat;
+worm100_lon(1,:)=t_lon;
+
+%%% propagate worms
+for i=1:k
+    
+t_u=ltln2val(Z_u_100, refvec_u, worm100_lat(i,:),worm100_lon(i,:));
+t_v=ltln2val(Z_v_100, refvec_v, worm100_lat(i,:),worm100_lon(i,:));
+a=atan2(t_u,t_v);
+a= (a - pi/2);
+a(a<0)=a(a<0)+2*pi;
+t_angle=a + pi/2;
+t_arclen=sqrt(t_u.^2 + t_v.^2);
+
+[t_lat_new,t_lon_new] = reckon(worm100_lat(i,:),worm100_lon(i,:),t_arclen*coe,rad2deg(t_angle) );
+
+worm100_lat(i+1,:)=t_lat_new + randn(size(t_lat_new))*.005;
+worm100_lon(i+1,:)=t_lon_new + randn(size(t_lon_new))*.005;
+end
+
+worm100_age=ones([1,size(worm100_lat,2)]);
+ 
+    
+    else
+        
+  % create new worms
+  clear newworm100_lat newworm100_lon newworm100_age
+n=n_create;
+newworm100_lat_start=rand([1,n])*(latlim(2)-latlim(1)) + latlim(1);
+newworm100_lon_start=rand([1,n])*(lonlim(2)-lonlim(1)) + lonlim(1);
+bottomdepth = ltln2val(Z, refvec, newworm100_lat_start,newworm100_lon_start);
+newworm100_emu = ltln2val(Z_eu_100, refvec_u, newworm100_lat_start,newworm100_lon_start);
+newworm100_emv = ltln2val(Z_ev_100, refvec_u, newworm100_lat_start,newworm100_lon_start);
+ix=bottomdepth<0 & newworm100_emu<errorthreshold & newworm100_emv<errorthreshold;
+newworm100_lat_start( ~ix)=[];
+newworm100_lon_start(~ix)=[];
+
+newworm100_lat(1,:)=newworm100_lat_start;
+newworm100_lon(1,:)=newworm100_lon_start;     
+
+%%% propagate new worms
+for i=1:wormlength  
+t_u=ltln2val(Z_u_100, refvec_u, newworm100_lat(i,:),newworm100_lon(i,:));
+t_v=ltln2val(Z_v_100, refvec_v, newworm100_lat(i,:),newworm100_lon(i,:));
+a=atan2(t_u,t_v);
+a= (a - pi/2);
+a(a<0)=a(a<0)+2*pi;
+t_angle=a + pi/2;
+t_arclen=sqrt(t_u.^2 + t_v.^2);
+[t_lat_new,t_lon_new] = reckon(newworm100_lat(i,:),newworm100_lon(i,:),t_arclen*coe,rad2deg(t_angle) );
+newworm100_lat(i+1,:)=t_lat_new + randn(size(t_lat_new))*.005;
+newworm100_lon(i+1,:)=t_lon_new + randn(size(t_lon_new))*.005;
+end
+newworm100_age=ones([1,size(newworm100_lat,2)]);
+
+%%% propagate old worms
+t_u=ltln2val(Z_u_100, refvec_u, worm100_lat(end,:),worm100_lon(end,:));
+t_v=ltln2val(Z_v_100, refvec_v, worm100_lat(end,:),worm100_lon(end,:));
+a=atan2(t_u,t_v);
+a= (a - pi/2);
+a(a<0)=a(a<0)+2*pi;
+t_angle=a + pi/2;
+t_arclen=sqrt(t_u.^2 + t_v.^2);
+[t_lat_new,t_lon_new] = reckon(worm100_lat(end,:),worm100_lon(end,:),t_arclen*coe,rad2deg(t_angle) );
+
+worm100_lat(1:end-1,:)=worm100_lat(2:end,:)
+worm100_lat(end,:)=t_lat_new + randn(size(t_lat_new))*.005;
+worm100_lon(1:end-1,:)=worm100_lon(2:end,:)
+worm100_lon(end,:)=t_lon_new + randn(size(t_lon_new))*.005;
+
+%%% merge worms
+
+worm100_lat=[worm100_lat,newworm100_lat];
+worm100_lon=[worm100_lon,newworm100_lon];
+worm100_age=[worm100_age,newworm100_age];
+     
+        
+    end
+    
+%kill old worms 
+ix=worm100_age>lifetime;
+  worm100_lat(:,ix) = []; 
+  worm100_lon(:,ix) = []; 
+  worm100_age(ix) = []; 
+ 
+  worm100_age=worm100_age+1;
+  
+  
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  
+  
+%%% new worms   
+    if i_iteration==1
+n=n_create;
+t_lat=rand([1,n])*(latlim(2)-latlim(1)) + latlim(1);
+t_lon=rand([1,n])*(lonlim(2)-lonlim(1)) + lonlim(1);
+
+bottomdepth = ltln2val(Z, refvec, t_lat,t_lon);
+emu_t = ltln2val(Z_eu_300, refvec_u, t_lat,t_lon);
+emv_t = ltln2val(Z_ev_300, refvec_u, t_lat,t_lon);
+
+ix=bottomdepth<0 & emu_t<errorthreshold & emv_t<errorthreshold;
+t_lat( ~ix)=[];
+t_lon(~ix)=[];
+
+t_u=ltln2val(Z_u_300, refvec_u, t_lat,t_lon);
+t_v=ltln2val(Z_v_300, refvec_v, t_lat,t_lon);
+
+a=atan2(t_u,t_v);
+t_angle=real(asin(t_u.*sin(a)./t_v))
+t_arclen=sqrt(t_u.^2 + t_v.^2);
+
+coe=0.1;
+
+k=wormlength;
+worm300_lat(1,:)=t_lat;
+worm300_lon(1,:)=t_lon;
+
+%%% propagate worms
+for i=1:k
+    
+t_u=ltln2val(Z_u_300, refvec_u, worm300_lat(i,:),worm300_lon(i,:));
+t_v=ltln2val(Z_v_300, refvec_v, worm300_lat(i,:),worm300_lon(i,:));
+a=atan2(t_u,t_v);
+a= (a - pi/2);
+a(a<0)=a(a<0)+2*pi;
+t_angle=a + pi/2;
+t_arclen=sqrt(t_u.^2 + t_v.^2);
+
+[t_lat_new,t_lon_new] = reckon(worm300_lat(i,:),worm300_lon(i,:),t_arclen*coe,rad2deg(t_angle) );
+
+worm300_lat(i+1,:)=t_lat_new + randn(size(t_lat_new))*.005;
+worm300_lon(i+1,:)=t_lon_new + randn(size(t_lon_new))*.005;
+end
+
+worm300_age=ones([1,size(worm300_lat,2)]);
+ 
+    
+    else
+        
+  % create new worms
+  clear newworm300_lat newworm300_lon newworm300_age
+n=n_create;
+newworm300_lat_start=rand([1,n])*(latlim(2)-latlim(1)) + latlim(1);
+newworm300_lon_start=rand([1,n])*(lonlim(2)-lonlim(1)) + lonlim(1);
+bottomdepth = ltln2val(Z, refvec, newworm300_lat_start,newworm300_lon_start);
+newworm300_emu = ltln2val(Z_eu_300, refvec_u, newworm300_lat_start,newworm300_lon_start);
+newworm300_emv = ltln2val(Z_ev_300, refvec_u, newworm300_lat_start,newworm300_lon_start);
+ix=bottomdepth<0 & newworm300_emu<errorthreshold & newworm300_emv<errorthreshold;
+newworm300_lat_start( ~ix)=[];
+newworm300_lon_start(~ix)=[];
+
+newworm300_lat(1,:)=newworm300_lat_start;
+newworm300_lon(1,:)=newworm300_lon_start;     
+
+%%% propagate new worms
+for i=1:wormlength  
+t_u=ltln2val(Z_u_300, refvec_u, newworm300_lat(i,:),newworm300_lon(i,:));
+t_v=ltln2val(Z_v_300, refvec_v, newworm300_lat(i,:),newworm300_lon(i,:));
+a=atan2(t_u,t_v);
+a= (a - pi/2);
+a(a<0)=a(a<0)+2*pi;
+t_angle=a + pi/2;
+t_arclen=sqrt(t_u.^2 + t_v.^2);
+[t_lat_new,t_lon_new] = reckon(newworm300_lat(i,:),newworm300_lon(i,:),t_arclen*coe,rad2deg(t_angle) );
+newworm300_lat(i+1,:)=t_lat_new + randn(size(t_lat_new))*.005;
+newworm300_lon(i+1,:)=t_lon_new + randn(size(t_lon_new))*.005;
+end
+newworm300_age=ones([1,size(newworm300_lat,2)]);
+
+%%% propagate old worms
+t_u=ltln2val(Z_u_300, refvec_u, worm300_lat(end,:),worm300_lon(end,:));
+t_v=ltln2val(Z_v_300, refvec_v, worm300_lat(end,:),worm300_lon(end,:));
+a=atan2(t_u,t_v);
+a= (a - pi/2);
+a(a<0)=a(a<0)+2*pi;
+t_angle=a + pi/2;
+t_arclen=sqrt(t_u.^2 + t_v.^2);
+[t_lat_new,t_lon_new] = reckon(worm300_lat(end,:),worm300_lon(end,:),t_arclen*coe,rad2deg(t_angle) );
+
+worm300_lat(1:end-1,:)=worm300_lat(2:end,:)
+worm300_lat(end,:)=t_lat_new + randn(size(t_lat_new))*.005;
+worm300_lon(1:end-1,:)=worm300_lon(2:end,:)
+worm300_lon(end,:)=t_lon_new + randn(size(t_lon_new))*.005;
+
+%%% merge worms
+
+worm300_lat=[worm300_lat,newworm300_lat];
+worm300_lon=[worm300_lon,newworm300_lon];
+worm300_age=[worm300_age,newworm300_age];
+     
+        
+    end
+    
+%kill old worms 
+ix=worm300_age>lifetime;
+  worm300_lat(:,ix) = []; 
+  worm300_lon(:,ix) = []; 
+  worm300_age(ix) = []; 
+ 
+  worm300_age=worm300_age+1;
+  
+    %%%% plot
+figure(3)
+clf
+hold on
+set(gcf,'color',[1 1 1])
+m_proj('lambert','long',lonlim,'lat',latlim);
+%  m_contourf(ibcao.lon,ibcao.lat,ibcao.depth,[-5000:200:0],'color',[.5 .5 .5]);
+%  colormap(cmocean('deep'))
+[C,h]=m_contour(ibcao.lon,ibcao.lat,ibcao.depth,[-5000:200:0],'color',[.5 .5 .5]);
+% clabel(C,h,[-4000,-2000,-1000:50:-100],'color',[.5 .5 .5]);
+m_gshhs_h('patch',[.9 .9 .9]);
+m_grid('xlabeldir','end','fontsize',10);
+
+cmap100=cmocean('speed',wormlength);
+cmap300=cmocean('amp',wormlength);
+
+% widthvec=linspace(1,1.8,wormlength);
+
+
+for k=1:size(worm300_lat,1)-1
+for i=1:size(worm300_lat,2)
+    m_plot(worm300_lon(k:k+1,i),worm300_lat(k:k+1,i),'-','color',cmap300(k,:),'linewidth',1.8)
+end    
+end  
+
+for k=1:size(worm100_lat,1)-1
+for i=1:size(worm100_lat,2)
+    m_plot(worm100_lon(k:k+1,i),worm100_lat(k:k+1,i),'-','color',cmap100(k,:),'linewidth',1.8)
+end    
+end  
+
+
+drawnow
+
+  set(gcf,'PaperPositionMode','auto')
+  print(gcf,'-dpng',[animationdir,'/frame_',num2str(i_iteration)],'-r200') 
+
+%     
+%  F(i_iteration) = getframe(gcf);
+% 
+% im = frame2im(F(i_iteration));
+% [A,map] = rgb2ind(im,256); 
+% 	if i== i_iteration;
+% 		imwrite(A,map,filename,'gif','LoopCount',inf,'DelayTime',.1);
+% 	else
+% 		imwrite(A,map,filename,'gif','WriteMode','append','DelayTime',.1);
+%     end
+
+end
+```
+# Making a GIF from the frames
+
+```Matlab
+%% make gif from images
+
+
+animationdir='imagefolder/wormflow5/gif/';
+
+filelist=dir([animationdir,'*.png']);
+anmimationname='animation.gif';
+
+dates = extractfield(filelist, 'datenum');
+names = extractfield(filelist, 'name');
+
+[a,b]=sort(dates);
+names=names(b);
+
+for i=1:numel(names)
+
+im = imread([animationdir,names{i}]);
+[A,map] = rgb2ind(im,256); 
+	if i==1;
+		imwrite(A,map,[animationdir,anmimationname],'gif','LoopCount',inf,'DelayTime',.07);
+	else
+		imwrite(A,map,[animationdir,anmimationname],'gif','WriteMode','append','DelayTime',.07);
+    end
+
+end
+```
 
 # References
 
